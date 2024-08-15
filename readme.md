@@ -29,7 +29,7 @@ make
 
 This will make a folder called `autoshutdown_vX.X.X`.
 
-`autoshutdown_vX.X.X` contains two executable files, `activate_cron` and `auto_off` as well as a folder called `_internals` which contains shared libraries for our executables. 
+`autoshutdown_vX.X.X` contains two executable files, `activate_cron` and `auto_off` as well as a folder called `_internal` which contains shared libraries for our executables. 
 
 In a little more detail, calling `make` runs `build.sh` which does the following: 
 
