@@ -12,8 +12,9 @@ from beaupy import Config as BpyConfig
 from packaging.version import Version
 
 
+CWD = os.path.split(os.path.dirname(os.path.realpath(__file__)))[0]
+DEFAULT_VERSION_FILEPATH = os.path.join(CWD, "version.properties")
 DEFAULT_CRON_FILEPATH = "/etc/cron.d/auto_off"
-DEFAULT_VERSION_FILEPATH = "version.properties"
 
 
 class AutoOffConfig:
@@ -343,7 +344,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--auto_off_path",
                         help="path to auto_off executable",
-                        default=f"{os.path.split(os.path.dirname(os.path.realpath(__file__)))[0]}/auto_off")
+                        default=os.path.join(CWD, "auto_off"))
     args = parser.parse_args()
     try:
         if enable_auto_off():
