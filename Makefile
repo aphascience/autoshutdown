@@ -1,4 +1,4 @@
-autoshutdown_v*: activate_cron.py auto_off.py autoshutdown.spec build.sh
+autoshutdown_v*: activate_cron.py auto_off.py autoshutdown.spec build.sh requirements/build.txt version.properties
 	bash build.sh
 
 test:

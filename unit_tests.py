@@ -9,37 +9,40 @@ import activate_cron
 
 
 class TestConfigureAutoOff(unittest.TestCase):
-    def test_build_cron_string(self):
-        self.maxDiff = 1023
+
+    @patch("activate_cron.parse_version_number")
+    def test_build_cron_string(self, mock_parse_version_number):
+        self.maxDiff = 1000
+        mock_parse_version_number.return_value = "1.0.0"
         # invalid input
         with self.assertRaises(TypeError):
-            activate_cron.build_cron_string("foo")
+            activate_cron.build_cron_string("foo", "foo/auto_off")
 
         # routine first run hour < 23
         config = activate_cron.AutoOffConfig(datetime.time(21, 00),
                                              30, 15, 0.05, True, False)
-        expected = "45 20 * * * root foo/auto_off --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n0,15,30,45 21-23 * * * root foo/auto_off --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n"
+        expected = "45 20 * * * root foo/auto_off 1.0.0 --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n0,15,30,45 21-23 * * * root foo/auto_off 1.0.0 --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n"
         self.assertEqual(activate_cron.build_cron_string(config, "foo/auto_off"),
                          expected)
 
         # routine first run hour == 22
         config = activate_cron.AutoOffConfig(datetime.time(22, 15),
                                              30, 15, 0.05, True, False)
-        expected = "0,15,30,45 22 * * * root foo/auto_off --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n0,15,30,45 23 * * * root foo/auto_off --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n"
+        expected = "0,15,30,45 22 * * * root foo/auto_off 1.0.0 --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n0,15,30,45 23 * * * root foo/auto_off 1.0.0 --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n"
         self.assertEqual(activate_cron.build_cron_string(config, "foo/auto_off"),
                          expected)
 
         # start_hour == 23
         config = activate_cron.AutoOffConfig(datetime.time(23, 15),
                                              30, 15, 0.05, True, False)
-        expected = "0,15,30,45 23 * * * root foo/auto_off --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n"
+        expected = "0,15,30,45 23 * * * root foo/auto_off 1.0.0 --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n"
         self.assertEqual(activate_cron.build_cron_string(config, "foo/auto_off"),
                          expected)
 
         # routine first run hour == 22 with default midnight shutdown
         config = activate_cron.AutoOffConfig(datetime.time(22, 15),
                                              30, 15, 0.05, True, True)
-        expected = "0,15,30,45 22 * * * root foo/auto_off --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n0,15,30,45 23 * * * root foo/auto_off --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n0 00 * * * root /usr/sbin/shutdown now\n"
+        expected = "0,15,30,45 22 * * * root foo/auto_off 1.0.0 --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n0,15,30,45 23 * * * root foo/auto_off 1.0.0 --inactivity_threshold_mins 30 --loadavg_level_mins 15 --cpu_idle_threshold 0.05 --ssh\n0 00 * * * root /usr/sbin/shutdown now\n"
         self.assertEqual(activate_cron.build_cron_string(config, "foo/auto_off"),
                          expected)
 
@@ -105,7 +108,7 @@ class TestAutoOff(fake_filesystem_unittest.TestCase):
     @patch("auto_off.logging.info")
     def test_cpu_inactive(self, mock_logging_info):
         # setup config object
-        config = auto_off.Config(15)
+        config = auto_off.Config("1.0.0", 15)
 
         # tests an inactivte CPU with a window of one cycle
         self.fs.create_file("test_record_filepath")
