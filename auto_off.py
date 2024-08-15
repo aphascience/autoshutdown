@@ -3,6 +3,7 @@ import argparse
 import os
 import logging
 import logging.handlers
+from packaging.version import Version
 
 # default paths
 LOADAVG_FILEPATH = "/proc/loadavg"
@@ -17,12 +18,14 @@ class Config:
         Validates and stores configuration settings for auto_off routine
     """
     def __init__(self,
+                 version_number: str,
                  inactivity_threshold_mins: int,
                  loadavg_level_mins: int = 15,
                  cpu_idle_threshold: float = 0.05,
                  ssh_check: bool = True):
         """
         Params:
+            version_number (str): autoshutdown version number, e.g. 1.0.4
             inactivity_threshold_mins (int): minutes of inactivity before
                 shutdown
             loadavg_level_mins (int): size of window (in minutes) on which to
@@ -31,6 +34,7 @@ class Config:
                 'inactive'
             ssh_check (bool): switch for checking for open SSH connections
         """
+        self.version = Version(version_number)
         self.inactivity_threshold_mins = inactivity_threshold_mins
         self.loadavg_level_mins = loadavg_level_mins
         self.cpu_idle_threshold = cpu_idle_threshold
@@ -160,9 +164,9 @@ def routine(config: Config,
         achieved and shutdowns the machine accordingly
     """
     if not os.path.isfile(loadavg_record_filepath):
-        logging.info("Starting auto-off routine: machine will shutdown after "
-                     f"{config.inactivity_threshold_mins} minutes of "
-                     "inactivity")
+        logging.info(f"Starting autoshutdown_v{config.version.public}: machine "
+                     f"will shutdown after {config.inactivity_threshold_mins} "
+                     "minutes of inactivity")
         open(loadavg_record_filepath, "x")
     if shutdown_approved(config, loadavg_record_filepath):
         subprocess.run(["/usr/sbin/shutdown", "now"])
@@ -180,6 +184,8 @@ if __name__ == "__main__":
     try:
         # Parse
         parser = argparse.ArgumentParser()
+        parser.add_argument("version_number",
+                            help="autoshutdown version number")
         parser.add_argument("--inactivity_threshold_mins",
                             help="minutes of inactivity before shutdown",
                             default=15, type=int)
@@ -193,7 +199,8 @@ if __name__ == "__main__":
         parser.add_argument("--ssh", action="store_true", default=False,
                             help="switch for checking for open SSH connections")
         args = parser.parse_args()
-        config = Config(args.inactivity_threshold_mins,
+        config = Config(args.version_number,
+                        args.inactivity_threshold_mins,
                         args.loadavg_level_mins,
                         args.cpu_idle_threshold,
                         args.ssh)

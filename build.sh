@@ -21,6 +21,7 @@ mkdir $DIST_PATH
 mv ./dist/activate_cron/* $DIST_PATH/.
 mv ./dist/auto_off/auto_off $DIST_PATH/.
 cp changelog.md $DIST_PATH/.
+cp version.properties $DIST_PATH/.
 
 # cleanup
 rm -rf ./dist/

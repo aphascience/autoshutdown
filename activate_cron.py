@@ -9,9 +9,11 @@ from rich import prompt
 from rich import print as richprint
 from beaupy import confirm as bpyconfirm
 from beaupy import Config as BpyConfig
+from packaging.version import Version
 
 
 DEFAULT_CRON_FILEPATH = "/etc/cron.d/auto_off"
+DEFAULT_VERSION_FILEPATH = "version.properties"
 
 
 class AutoOffConfig:
@@ -159,6 +161,20 @@ def get_inactivity_threshold_choices(loadavg_level_mins: int,
                   loadavg_level_mins)]
 
 
+def parse_version_number(version_filepath: str = DEFAULT_VERSION_FILEPATH) \
+        -> packaging.version.Version:
+    """
+        Parses the autoshutdown version number from version.properties file
+        into an instance of packaging.version.Version.
+
+        Raises InvalidVersion - If the version does not conform to PEP 440 in
+        any way then this exception will be raised.
+    """
+    with open(version_filepath) as f:
+        version_string = f.readline()
+    return Version(version_string)
+
+
 def parse_config() -> AutoOffConfig:
     """
         Parses the user specified configuration parameters read in via
@@ -253,6 +269,7 @@ def build_cron_string(config: AutoOffConfig, auto_off_path: str) -> str:
     start_hour = config.routine_first_run_time.hour
     start_minute = config.routine_first_run_time.minute
     cron_general = (f"* * * root {auto_off_path} "
+                    f"{parse_version_number()} "
                     f"--inactivity_threshold_mins {config.inactivity_threshold_mins} "
                     f"--loadavg_level_mins {config.loadavg_level_mins} "
                     f"--cpu_idle_threshold {config.cpu_idle_threshold}"
