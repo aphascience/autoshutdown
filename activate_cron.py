@@ -162,7 +162,7 @@ def get_inactivity_threshold_choices(loadavg_level_mins: int,
 
 
 def parse_version_number(version_filepath: str = DEFAULT_VERSION_FILEPATH) \
-        -> packaging.version.Version:
+        -> Version:
     """
         Parses the autoshutdown version number from version.properties file
         into an instance of packaging.version.Version.
