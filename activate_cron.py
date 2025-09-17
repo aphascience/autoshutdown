@@ -14,7 +14,9 @@ from packaging.version import Version
 
 
 CWD = os.path.dirname(os.path.realpath(__file__))
-OLD_CONFIGS_DIR = os.path.join("/home", os.environ.get("SUDO_USER"), ".cache/autoshutdown")
+OLD_CONFIGS_DIR = os.path.join(
+    "/home", os.environ.get("SUDO_USER"), ".cache/autoshutdown"
+)
 DEFAULT_VERSION_FILEPATH = os.path.join(CWD, "version.properties")
 DEFAULT_CRON_FILEPATH = "/etc/cron.d/auto_off"
 LOADAVG_INDEX = {1: 0, 5: 1, 15: 2}
@@ -169,8 +171,8 @@ def enable_auto_off() -> bool:
         "Would you like to enable/disable auto_off?",
         yes_text="enable",
         no_text="disable",
-        default_is_yes="true",
-        char_prompt=False,
+        default_is_yes=True,
+        char_prompt=False
     )
 
 
@@ -205,35 +207,90 @@ def parse_version_number(version_filepath: str = DEFAULT_VERSION_FILEPATH) -> Ve
     return Version(version_string)
 
 
-def parse_config(config: dict = None) -> AutoOffConfig:
+def confirm_old_config() -> dict:
     """
-    Parses the user specified configuration parameters read in via
-    CLI at runtime using beaupy and rich packages.
+    Asks the user if they would like to use a cached configuration file from
+    a previous setup. Looks for a compatible 'config.json' in
+    '~/.cache/autoshutdown/'. Only configs built with the same major version
+    as the current running version are compatible.
 
-    Returns an instance of AutoOffConfig, holding the required
-    configuration parameters
+    Returns:
+        The json selected json config file parsed as a dict
+
+        or ...
+
+        'None' if the user does not want to use a cached config or if there are
+        no compatible configs but the user wants to continue with the setup
+        wizard
+
+        or ...
+
+        exits the program if the user does not want to continue with the setup
+        wizard
     """
-
     BpyConfig.raise_on_interrupt = True
     if confirm(
         "Would you like to use a previous config?",
         yes_text="yes",
         no_text="no",
-        default_is_yes="no",
-        char_prompt=False,
+        char_prompt=False
     ):
-        previous_versions = os.listdir(os.path.join(OLD_CONFIGS_DIR))
+        versions = os.listdir(os.path.join(OLD_CONFIGS_DIR))
+        compatible_versions = [
+            v for v in versions if Version(v).major == parse_version_number().major
+        ]
+
         console = Console()
+        if len(compatible_versions) == 0:
+            if confirm(
+                "No compatible configs found.\nWould you like to continue with the setup wizard?",
+                yes_text="yes",
+                no_text="no",
+                char_prompt=False
+            ):
+                return None
+            else:
+                # exits the program is user doesn't want to use the wizard
+                sys.exit("Aborting")
         console.print("Select a previous config")
-        version = select(previous_versions, cursor="🢧", cursor_style="cyan")
+        version = select(compatible_versions, cursor="🢧", cursor_style="cyan")
+
+        def decode(config: dict) -> dict:
+            return {
+                k: (
+                    datetime.datetime.strptime(v, "%H:%M:%S").time()
+                    if ((k == "_shutdown_time") | (k == "routine_first_run_time"))
+                    else v
+                )
+                for k, v in config.items()
+            }
+
+        with open(os.path.join(OLD_CONFIGS_DIR, version, "config.json")) as config_file:
+            return json.load(config_file, object_hook=decode)
+    else:
+        return None
+
+
+def parse_config(old_config: dict = None) -> AutoOffConfig:
+    """
+    Parses the user specified configuration parameters read in via CLI at
+    runtime using beaupy and rich packages.
+    If 'old_config' is not 'None' then the supplied dict object is used to
+    to provide configuration parameters.
+
+    Returns an instance of AutoOffConfig, holding the required configuration
+    parameters
+    """
+
+    if old_config is not None:
         return parsing_validation(
             AutoOffConfig,
-            shutdown_time=config["shutdown_time"],
-            inactivity_threshold_mins=config["inactivity_threshold_mins"],
-            loadavg_level_mins=config["loadavg_level_mins"],
-            cpu_idle_threshold=config["cpu_idle_threshold"],
-            ssh_check=config["ssh_check"],
-            default_shutdown_at_midnight=config["default_shutdown_at_midnight"],
+            shutdown_time=old_config["_shutdown_time"],
+            inactivity_threshold_mins=old_config["inactivity_threshold_mins"],
+            loadavg_level_mins=old_config["loadavg_level_mins"],
+            cpu_idle_threshold=old_config["cpu_idle_threshold"],
+            ssh_check=old_config["ssh_check"],
+            default_shutdown_at_midnight=old_config["default_shutdown_at_midnight"],
         )
 
     try:
@@ -435,7 +492,7 @@ if __name__ == "__main__":
     args = parse_args()
     try:
         if enable_auto_off():
-            config = parse_config()
+            config = parse_config(confirm_old_config())
             config.to_json()
             deactivate_cron()
             activate_cron(build_cron_string(config, args.auto_off_path))
