@@ -7,12 +7,14 @@ import json
 
 from rich import prompt
 from rich import print as richprint
-from beaupy import confirm as bpyconfirm
+from rich.console import Console
+from beaupy import confirm, select
 from beaupy import Config as BpyConfig
 from packaging.version import Version
 
 
 CWD = os.path.dirname(os.path.realpath(__file__))
+OLD_CONFIGS_DIR = os.path.join("/home", os.environ.get("SUDO_USER"), ".cache/autoshutdown")
 DEFAULT_VERSION_FILEPATH = os.path.join(CWD, "version.properties")
 DEFAULT_CRON_FILEPATH = "/etc/cron.d/auto_off"
 LOADAVG_INDEX = {1: 0, 5: 1, 15: 2}
@@ -61,10 +63,11 @@ class AutoOffConfig:
             )
 
     def to_json(self):
+        """
+        Saves the config to a json file in "~/.cache"
+        """
         config_dir = os.path.join(
-            "/home",
-            os.environ.get("SUDO_USER"),
-            ".cache/autoshutdown",
+            OLD_CONFIGS_DIR,
             str(parse_version_number()),
         )
         if not os.path.exists(config_dir):
@@ -157,12 +160,12 @@ def get_first_run_time(
 def enable_auto_off() -> bool:
     """
     Prompts user for confirmation of whether they want to enable
-    or disbale auto_off.
+    or disable auto_off.
 
     Returns a boolean: True for enable, False for disable
     """
     BpyConfig.raise_on_interrupt = True
-    return bpyconfirm(
+    return confirm(
         "Would you like to enable/disable auto_off?",
         yes_text="enable",
         no_text="disable",
@@ -211,7 +214,18 @@ def parse_config(config: dict = None) -> AutoOffConfig:
     configuration parameters
     """
 
-    if config is not None:
+    BpyConfig.raise_on_interrupt = True
+    if confirm(
+        "Would you like to use a previous config?",
+        yes_text="yes",
+        no_text="no",
+        default_is_yes="no",
+        char_prompt=False,
+    ):
+        previous_versions = os.listdir(os.path.join(OLD_CONFIGS_DIR))
+        console = Console()
+        console.print("Select a previous config")
+        version = select(previous_versions, cursor="🢧", cursor_style="cyan")
         return parsing_validation(
             AutoOffConfig,
             shutdown_time=config["shutdown_time"],
