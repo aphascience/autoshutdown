@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-09-17
+
+Optional use of cached config for setup.
+
+### Changed
+
+### Added 
+
+- Users may now choose to setup `autoshutdown` automatically with a configuration of a previous install or run of the activator (`activate.sh` / `activate_cron.py`).
+    - Whenever run, `activate_cron.py` saves a json file defining all the user specified parameters to `~/.cache/autoshutdown/x.y.z/config.json`.
+    - If the user chooses, this file can be read and the parameters in it used to setup `autoshutdown` instead of using the setup wizard.
+
+### Removed
+
+
 ## [1.2.0] - 2025-06-30
 
 No longer using PyInstaller packaging tool. Instead relying on user's Python. Users simply download the source code in this repo, keep the file structure as is and run the shell script, `activate.sh`. 
