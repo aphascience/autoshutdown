@@ -62,23 +62,16 @@ class AutoOffConfig:
 
     def to_json(self):
         config_dir = os.path.join(
-            # TODO: this is /root/.cache/autoshutdown/x.y.z because of being run with sudo
-            os.path.expanduser("~/"),
+            "/home",
+            os.environ.get("SUDO_USER"),
             ".cache/autoshutdown",
             str(parse_version_number()),
         )
         if not os.path.exists(config_dir):
             os.makedirs(config_dir)
         with open(os.path.join(config_dir, "config.json"), "w") as config_file:
-            config_file.write(
-                json.dumps(
-                    {
-                        # TODO: only stringify the datetime objects
-                        k: str(v)
-                        for k, v in self.__dict__.items()
-                    }
-                )
-            )
+            json.dump(self.__dict__, config_file, indent=4, default=str)
+            config_file.write("\n")
 
 
 class ShutdownTimePrompt(prompt.PromptBase[int]):
