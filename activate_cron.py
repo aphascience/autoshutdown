@@ -21,6 +21,8 @@ DEFAULT_VERSION_FILEPATH = os.path.join(CWD, "version.properties")
 DEFAULT_CRON_FILEPATH = "/etc/cron.d/auto_off"
 LOADAVG_INDEX = {1: 0, 5: 1, 15: 2}
 
+BpyConfig.raise_on_interrupt = True
+
 
 class AutoOffConfig:
     """
@@ -166,7 +168,6 @@ def enable_auto_off() -> bool:
 
     Returns a boolean: True for enable, False for disable
     """
-    BpyConfig.raise_on_interrupt = True
     return confirm(
         "Would you like to enable/disable auto_off?",
         yes_text="enable",
@@ -228,7 +229,6 @@ def confirm_old_config() -> dict:
         exits the program if the user does not want to continue with the setup
         wizard
     """
-    BpyConfig.raise_on_interrupt = True
     if confirm(
         "Would you like to use a previous config?",
         yes_text="yes",
