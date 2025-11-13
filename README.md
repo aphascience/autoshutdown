@@ -32,6 +32,10 @@ You will then be guided through a number of command line prompts:
      - by selecting "enable", you will be guided further through the configuration process.
      - by selecting "disable", autoshutdown will be disabled and the configuration process will be ended.
 
+2. `Would you like to use a previous config?`
+    - by selecting "no", you will then continue onto the setup wizard with the prompts bellow.
+    - by selecting "yes", you will be asked to choose from a set of cached configurations from any previous setups you have performed if there are any available. Once selected `autoshutdown` will configure automatically.
+
 2. `Choose shutdown time in 24hr format, e.g. 1830 (this is the earliest your machine will shutdown) (1800) (18:00:00)`
     
     - this is asking what time you want your machine to shutdown if you are not using it or if nothing is running on the machine.
